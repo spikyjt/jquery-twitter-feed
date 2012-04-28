@@ -24,7 +24,7 @@
  *
  */
 
-(function( $ ){
+( function( $ ){
 
 	var self = {
 
@@ -38,131 +38,150 @@
 			interval: null,
 			dataCountAttr: 'data-count',
 			dataUsernameAttr: 'data-username',
-			dataIntervalAttr: 'data-interval'
+			dataIntervalAttr: 'data-interval',
+			tooltips: true
 
 		},
 
+		settings: { },
+
 		init: function( options ) {
 
-			var settings = $.extend( self.defaultSettings, options );
+			self.settings = $.extend( self.defaultSettings, options );
 
 			return this.each( function() {
 
-				self._fetch( settings.username, settings.count );
+				self._fetch();
 
 			} );
 
 		},
 
-		_fetch: function( username, count ) {
+		_fetch: function() {
 
 			$.getJSON( self.fetchURL + '?callback=?', {
-				q: 'from:' + username,
-				rpp: count,
+				q: 'from:' + self.settings.username,
+				rpp: self.settings.count,
 				result_type: 'recent',
 				include_entities: true
 			}, self._parseTweets( data ) );
 
 		},
 
-		_parseTweets: function(data){
+		_parseTweets: function( data ){
 
-			$.each(data.results, function(index,tweet){
-				var text='',
-					entities=self._parseUtils.entitiesSort( tweet.entities ),
-					position=0;
+			$.each( data.results, function( index, tweet ) {
+				var text = '',
+					entities = self._parseUtils.sortEntities( tweet.entities ),
+					position = 0;
 
-				$.each(entities, function(index, entity){
-					text+=tweet.text.substring(position, entity.indices[0]);
-					switch(entity.entityType){
-						case 'user_mentions':
-							text+='<a class="tweet-mention" href="http://twitter.com/'+entity.screen_name+'" title="'+entity.name+'" data-screen_name="'+entity.screen_name+'">'+
-								'<span class="tweet-at">@</span>'+
-								entity.screen_name+
-								'</a>';
-							break;
-						case 'urls':
-							text+='<a class="tweet-link" href="'+entity.url+'" title="Visit '+entity.expanded_url+'">'+
-								entity.display_url+
-								'</a>';
-							break;
-						case 'hashtags':
-							text+='<a class="tweet-hashtag" href="http://twitter.com/search/%23'+entity.text+'" title="Show Twitter search: #'+entity.text+'">'+
-								'<span class="tweet-hash">#</span>'+
-								entity.text+
-								'</a>';
-							break;
-						case 'media':
-							text+='<a class="tweet-media" href="'+entity.media_url+'">'+
-								entity.display_url+
-								'</a>'
-							break;
-					}
-					position=entity.indices[1];
-				});
-				text+=tweet.text.substring(position);
-				t.prepend('<div id="tweet-'+tweet.id_str+'" class="tweet">'+text+'</div>');
-			});
-			$('.tweet-mention').tooltip({
-				position: 'top center',
-				offset: [8,0],
-				opacity: 0.9,
-				effect: 'slide',
-				tipClass: 'tooltip tweet-mention-tooltip',
-				layout: '<div><span class="tweet-mention-img"></span></div>',
-				onBeforeShow: function(){
-					var tmi=this.getTip().find('.tweet-mention-img'),
-						screenName=this.getTrigger().attr('data-screen_name');
-					$.getJSON('http://api.twitter.com/1/users/show.json?callback=?', {
-						screen_name: screenName,
-						size: 'normal'
-					}, function(data){
-						tmi.html('<img src="'+data.profile_image_url+'"/>');
-					});
-				}
-			});
-			$('.tweet-hashtag, .tweet-link').tooltip({
-				position: 'top center',
-				offset: [8,0],
-				opacity: 0.9,
-				effect: 'slide',
-				tipClass: 'tooltip tweet-hashtag-tooltip'
-			});
-			
+				$.each( entities, function( index, entity ) {
+					text += tweet.text.substring( position, entity.indices[ 0 ] ) + self._parseUtils.entityParse[ entity.entityType ]( entity );
+					position = entity.indices[ 1 ];
+				} );
+				text += tweet.text.substring( position );
+				t.prepend( '<div id="tweet-' + tweet.id_str + '" class="tweet">' + text + '</div>');
+			} );
+
+			self.addTooltips();
+
 		},
 
 		_parseUtils: {
 
-			entitiesSort: function( entities ) {
+			sortEntities: function( entities ) {
 
 				var sorted=[];
 
-				$.each(entities, function(type, entitiesOfType){
+				$.each( entities, function( type, entitiesOfType ) {
 
-					$.each(entitiesOfType, function(index, entity){
+					$.each( entitiesOfType, function( index, entity ) {
 
-						entity.entityType=type;
-						sorted.push(entity);
+						entity.entityType = type;
+						sorted.push( entity );
 
-					});
+					} );
 
-				});
+				} );
 
-				sorted.sort(self._parseUtils.entitiesSortLoop);
+				sorted.sort( self._parseUtils.entitiesSortLoop );
 
 			},
 
 			entitiesSortLoop: function( current, next ) {
 
-				return current.indices[0] - next.indices[0];
+				return current.indices[ 0 ] - next.indices[ 0 ];
+
+			},
+
+			entityParse: {
+
+				user_mentions: function( entity ) {
+
+					return '<a class="tweet-mention" href="http://twitter.com/' + entity.screen_name + '" title="' + entity.name + '" data-screen_name="' + entity.screen_name + '"><span class="tweet-at">@</span>' + entity.screen_name + '</a>';
+
+				},
+
+				urls: function( entity ) {
+
+					return '<a class="tweet-link" href="' + entity.url + '" title="Visit ' + entity.expanded_url + '">' + entity.display_url + '</a>';
+
+				},
+
+				hashtags: function( entity ) {
+
+					return '<a class="tweet-hashtag" href="http://twitter.com/search/%23' + entity.text + '" title="Show Twitter search: #' + entity.text + '">' + '<span class="tweet-hash">#</span>' + entity.text + '</a>';
+
+				},
+
+				media: function( entity ) {
+
+					return '<a class="tweet-media" href="' + entity.media_url + '">' + entity.display_url + '</a>';
+
+				}
 
 			}
 
 		},
 
-		_followButton: function( username ) {
+		_addFollowButton: function( username ) {
 
 			this.after( '<a class="follow_button" href="http://twitter.com/' + username + '"></a>' );
+
+		},
+
+		_addToolTips: function () {
+
+			if( self.settings.tooltips && 'tooltip' in $ ) {
+
+				$( '.tweet-mention' ).tooltip( {
+					position: 'top center',
+					offset: [8,0],
+					opacity: 0.9,
+					effect: 'slide',
+					tipClass: 'tooltip tweet-mention-tooltip',
+					layout: '<div><span class="tweet-mention-img"></span></div>',
+					onBeforeShow: function() {
+						var tmi = this.getTip().find( '.tweet-mention-img' ),
+							screenName = this.getTrigger().attr('data-screen_name' );
+						$.getJSON( 'http://api.twitter.com/1/users/show.json?callback=?', {
+							screen_name: screenName,
+							size: 'normal'
+						}, function( data ){
+							tmi.html( '<img src="' + data.profile_image_url + '"/>' );
+						} );
+					}
+				} );
+
+				$( '.tweet-hashtag, .tweet-link' ).tooltip( {
+					position: 'top center',
+					offset: [8,0],
+					opacity: 0.9,
+					effect: 'slide',
+					tipClass: 'tooltip tweet-link-tooltip'
+				} );
+
+			}
 
 		}
 
@@ -194,4 +213,4 @@
 
 	}
 
-})( jQuery );
+} )( jQuery );
