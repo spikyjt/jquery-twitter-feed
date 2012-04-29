@@ -1,0 +1,127 @@
+/*
+    Document   : jquery.twitterfeed
+    Created on : 29-Apr-2012, 17:05:04
+    Author     : jt
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+.tweet
+{
+	margin-bottom: .5em;
+}
+
+.tweet a
+{
+	font-weight: bold;
+}
+
+.tweet-actions
+{
+	clear: both;
+	overflow: hidden;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+
+.tweet-actions > li,
+.twitter-bird
+{
+	float: left;
+	height: 16px;
+	margin: 0;
+	padding: 0;
+}
+
+.tweet-timestamp > a
+{
+	font-size: .9em;
+	font-weight: normal;
+}
+
+.twitter-bird,
+.tweet-action-reply,
+.tweet-action-favorite,
+.tweet-action-retweet
+{
+	width: 20px;
+}
+
+.tweet-action-text,
+.twitter-bird-text
+{
+	display: none;
+}
+
+.tweet-action > a,
+.twitter-bird
+{
+	display: block;
+	width: 0;
+	height: 16px;
+	overflow: hidden;
+	margin: 0;
+	padding-left: 20px;
+	background: transparent url(../images/twitter-sprite.png) no-repeat 2px top;
+}
+
+.tweet-timestamp > a:hover > .twitter-bird{background-position-y: -16px;}
+.tweet-action-reply > a{background-position-y: -32px;}
+.tweet-action-reply > a:hover{background-position-y: -48px;}
+.tweet-action-favorite > a{background-position-y: -64px;}
+.tweet-action-favorite > a:hover{background-position-y: -80px;}
+.tweet-action-retweet > a{background-position-y: -128px;}
+.tweet-action-retweet > a:hover{background-position-y: -144px;}
+
+
+.tweet-mention-img
+{
+	display: block;
+	float: left;
+	width: 48px;
+	height: 48px;
+	margin-right: 10px;
+}
+
+
+/* tooltips */
+.tooltip
+{
+	display: none;
+	padding: 10px;
+	color: #fff;
+	border: 2px solid #33ccff;
+	background-color: #33ccff;
+	background-image: -webkit-linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,0));
+	background-image: -moz-linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,0));
+	background-image: -ms-linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,0));
+	background-image: -o-linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,0));
+	background-image: linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,0));
+	-moz-box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.5) inset;
+	-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.5) inset;
+	box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.5) inset;
+	text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+
+.tooltip:before,
+.tooltip:after
+{
+	content: "";
+	position: absolute;
+	z-index: 1000;
+	bottom: -7px;
+	left: 50%;
+	margin-left: -8px;
+	border-top: 8px solid #33ccff;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+	border-bottom: 0;
+}
+
+.tooltip:before
+{
+	border-top-color: #e4e4e5;
+	bottom: -8px;
+}

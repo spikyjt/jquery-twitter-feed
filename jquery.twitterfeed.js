@@ -37,6 +37,10 @@
 		 */
 		fetchURL: 'http://search.twitter.com/search.json',
 
+		actionURL: 'https://twitter.com/intent/',
+
+		permalinkURL: 'http://twitter.com/',
+
 		/**
 		 * {Object} Default settings
 		 */
@@ -44,11 +48,15 @@
 
 			count: null,
 			username: null,
-			autoRefresh: null,
-			interval: null,
+			autoRefresh: false,
+			interval: 60,
 			dataCountAttr: 'data-count',
 			dataUsernameAttr: 'data-username',
 			dataIntervalAttr: 'data-interval',
+			bird: true,
+			timestamps: true,
+			actions: true,
+			_defaultActions: [ 'reply', 'retweet', 'favorite' ],
 			tooltips: true
 
 		},
@@ -90,6 +98,7 @@
 				result_type: 'recent',
 				include_entities: true
 			}, function( data ) {
+console.log(data);
 				self._parseTweets( container, data )
 			} );
 
@@ -104,9 +113,11 @@
 
 			$.each( data.results, function( index, tweet ) {
 
-				container.prepend( '<div id="tweet-' + tweet.id_str + '" class="tweet">' +
+				var tweetElement = $( '<div id="tweet-' + tweet.id_str + '" class="tweet">' +
 					self._parseUtils.tweetParse( tweet ) +
-					'</div>' );
+					'</div>' ).appendTo( container );
+
+				self._addExtras( tweet, tweetElement );
 
 			} );
 
@@ -253,7 +264,7 @@
 		 * @todo add media tooltips with image fetching
 		 * @todo add configuration settings
 		 */
-		_addToolTips: function ( container ) {
+		_addToolTips: function( container ) {
 
 			if( self.settings.tooltips && 'tooltip' in $.fn ) {
 
@@ -283,6 +294,129 @@
 					effect: 'slide',
 					tipClass: 'tooltip tweet-link-tooltip'
 				} );
+
+			}
+
+		},
+
+		_addExtras: function ( tweet, tweetElement ) {
+
+			if( !self.settings.bird && !self.settings.timestamps && !self.settings.actions ) {
+				return;
+			}
+
+			var actionsHTML = '<ul class="tweet-actions">' +
+				self._addTimestamp( tweet ) +
+				self._addActions( tweet ) +
+				'</ul>';
+
+			tweetElement.append( actionsHTML );
+		},
+
+		_addBird: function () {
+
+			var link = '';
+			if( self.settings.bird ) {
+				link = '<span class="twitter-bird"><span class="twitter-bird-text">Tweeted</span></span> ';
+			}
+			return link;
+
+		},
+
+		_addTimestamp: function ( tweet ) {
+
+			var link = '';
+			if( self.settings.timestamps ) {
+				var created = Math.floor( Date.parse( tweet.created_at ) / 1000 ),
+					now = Math.floor( Date.now() / 1000 ),
+					interval = now - created,
+					timestamp = self._timestampUtils.interval( interval );
+
+				link = ' <li class="tweet-timestamp"><a href="' +
+					self.permalinkURL + tweet.from_user + '/status/' + tweet.id_str +
+					'" title="' + tweet.created_at + '">' +
+					self._addBird() + timestamp +
+					'</a></li>';
+			}
+			return link;
+
+		},
+
+		_timestampUtils: {
+
+			interval: function( interval ) {
+
+				var qty, unit, plural = 's';
+
+				if( interval < 60 ) { // seconds ago
+					qty = interval;
+					unit = 'second';
+				} else if ( interval < 3600 ) { // minutes ago
+					qty = Math.floor( interval / 60 );
+					unit = 'minute';
+				} else if ( interval < 86400 ) { // hours ago
+					qty = Math.floor( interval / 3600 );
+					unit = 'hour';
+				} else { // days ago
+					qty = Math.floor( interval / 86400 );
+					unit = 'day';
+				}
+
+				if( qty == 1 ) {
+					plural = '';
+				}
+				return qty + ' ' + unit + plural + ' ago';
+
+			}
+
+		},
+
+		_addActions: function( tweet ) {
+
+			var actionLinks = '';
+			if( self.settings.actions ) {
+				$.each( self._actionUtils.actions( self.settings.actions ), function( index, action ) {
+
+					actionLinks += self._actionUtils.link( tweet, action );
+
+				} );
+			}
+			return actionLinks;
+
+		},
+
+		_actionUtils: {
+
+			/**
+			 * Create a tweet action link
+			 * @param {Object} tweet The tweet
+			 * @param {String} type Type of action [ reply, retweet, favorite ]
+			 * @return {String} The action link wrapped in a list item
+			 */
+			link: function( tweet, type ) {
+
+				var hType = type.charAt(0).toUpperCase() + type.substring(1),
+					url = self.actionURL + self._actionUtils.query[ type ] + tweet.id_str;
+
+				return ' <li class="tweet-action tweet-action-' + type + '"><a href="' + url + '" title="' + hType + '"><span class="tweet-action-text">' + hType + '</span></a></li>';
+
+			},
+
+			query: {
+
+				reply: 'tweet?in_reply_to=',
+				retweet: 'retweet?tweet_id=',
+				favorite: 'favorite?tweet_id='
+
+			},
+
+			actions: function( actions ) {
+
+				if( typeof actions === 'object' ) {
+					return actions;
+				} else {
+					return self.defaultSettings._defaultActions;
+				}
 
 			}
 
